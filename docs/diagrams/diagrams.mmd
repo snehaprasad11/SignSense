@@ -1,0 +1,37 @@
+%% Mermaid sources of the block diagrams (paste each block into https://mermaid.live).
+%% PNGs in this folder are rendered from the same diagrams.
+
+%% ---------------------------------------------------------- 1. system block diagram
+flowchart LR
+    H[Hand motion<br/>sign word] --> IMU[MPU6500 IMU<br/>±2 g · ±250 °/s · 100 Hz]
+    IMU -- I²C 400 kHz --> ESP[ESP32, no PSRAM<br/>core 0: sampler + ring buffer<br/>core 1: Conv1D TFLite Micro 279 ms<br/>threshold 0.84 + cooldown]
+    ESP -- USB serial #PRED/#STAT --> PC[Laptop<br/>word · sentence · speech]
+
+%% ---------------------------------------------------------- 2. proposed methodology
+flowchart LR
+    R1[1 Capture firmware] --> R2[2 Capture & curation] --> R3[3 Model training]
+    R3 --> R4[4 Export & quantization] --> R5[5 Inference firmware] --> R6[6 Server & validation]
+    R6 -. weak signs: re-record, retrain .-> R2
+
+%% ---------------------------------------------------------- 3. inference firmware
+flowchart LR
+    subgraph core0 [core 0: sampler every 10 ms]
+      A[read IMU] --> B{bad data?} -- no --> C[(ring buffer 100×6)]
+      B -- yes, 20× --> RI[re-init sensor]
+    end
+    subgraph core1 [core 1: every 50 samples]
+      D[copy window] --> E[normalise] --> F[Invoke 279 ms] --> G{conf ≥ 0.84<br/>not rest<br/>cooldown ok?} --> P[#PRED]
+    end
+    C --> D
+
+%% ---------------------------------------------------------- 4. model
+flowchart LR
+    I[100×6] --> C1[Conv1D 32 k5] --> P1[MaxPool 2 + Dropout] --> C2[Conv1D 64 k3] --> P2[MaxPool 2 + Dropout]
+    P2 --> F[Flatten 1600 / GAP 64] --> D1[Dense 64 + Dropout] --> O[Dense 7 softmax]
+
+%% ---------------------------------------------------------- 5. wiring
+flowchart LR
+    M[MPU6500] -- VCC → 3V3 --- E[ESP32]
+    M -- GND → GND --- E
+    M -- SDA → GPIO 21 --- E
+    M -- SCL → GPIO 22 --- E

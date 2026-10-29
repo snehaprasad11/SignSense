@@ -1,0 +1,6 @@
+secrets.h
+__pycache__/
+logs/
+*.pyc
+data/synthetic/
+artifacts/sim/

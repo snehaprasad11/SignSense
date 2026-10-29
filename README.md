@@ -5,6 +5,8 @@ and speech. One MPU6500/MPU6050 motion sensor sits on the back of the hand; an E
 microcontroller runs a 1-D convolutional neural network with TensorFlow Lite Micro, entirely
 on the device.
 
+**Project website:** https://signsense-vit.netlify.app/
+
 **Words:** HELLO · THANK YOU · YES · PLEASE · HELP · COME (+ rest)
 
 | Result | Value |
